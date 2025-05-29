@@ -4,7 +4,26 @@ import axios from 'axios';
 function App() {
   const [pokemons, setPokemons] = useState([]);
   const [selecionado, setSelecionado] = useState(null);
+  const [socket, setSocket] = useState(null);
+  const [connected, setConnected] = useState(false);
 
+  // Função para conectar ao servidor WebSocket
+  const conectarAoServidor = () => {
+    const socket = new WebSocket('ws://localhost:3000'); // Corrigido para a porta 3000
+    setSocket(socket);
+
+    socket.onopen = () => {
+      console.log('Conectado ao servidor WebSocket');
+      setConnected(true);
+    };
+
+    socket.onclose = () => {
+      console.log('Desconectado do servidor WebSocket');
+      setConnected(false);
+    };
+  };
+
+  // Função para buscar 3 Pokémons aleatórios da API do Pokémon
   const buscarPokemonsAleatorios = async () => {
     const novosPokemons = [];
 
@@ -38,13 +57,32 @@ function App() {
     setSelecionado(null);
   };
 
+  // Função para escolher um Pokémon
   const escolherPokemon = (poke) => {
     setSelecionado(poke);
+  };
+
+  // Função para enviar a escolha ao servidor WebSocket
+  const enviarEscolha = () => {
+    if (selecionado && socket) {
+      // Envia a escolha do Pokémon para o servidor
+      socket.send(JSON.stringify({ choice: selecionado }));
+    }
   };
 
   return (
     <div style={{ textAlign: 'center', marginTop: '30px' }}>
       <h1>Monte seu time Pokémon</h1>
+
+      {/* Botão para conectar ao servidor WebSocket */}
+      {!connected ? (
+        <button onClick={conectarAoServidor} style={{ padding: '0.5rem 1rem', marginBottom: '1rem' }}>
+          Conectar ao Servidor
+        </button>
+      ) : (
+        <p>Conectado ao servidor!</p>
+      )}
+
       <button onClick={buscarPokemonsAleatorios} style={{ padding: '0.5rem 1rem', marginBottom: '1rem' }}>
         Buscar 3 Pokémons
       </button>
@@ -73,6 +111,14 @@ function App() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {selecionado && (
+        <div>
+          <button onClick={enviarEscolha} style={{ padding: '0.5rem 1rem', marginBottom: '1rem' }}>
+            Enviar Escolha
+          </button>
         </div>
       )}
 
